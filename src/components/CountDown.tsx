@@ -1,9 +1,16 @@
 import styles from '../styles/pages/CountDown.module.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useContext } from 'react'
+import { ChallengesContext } from '../contexts/ChallangesContext'
+
+let countdownTimeout: NodeJS.Timeout
 
 export default function CountDown(){
-    const [time, setTime] = useState(25 * 60)
-    const [active, setActive] = useState(false)
+    const { startNewChallenge } = useContext(ChallengesContext)
+
+    const [time, setTime]               = useState(0.1 * 60)
+    const [isActive, setIsActive]       = useState(false)
+    const [hasFinished, setHasFinished] = useState(false)
+
     const minutes = Math.floor(time / 60);
     const seconds = time % 60;
 
@@ -12,16 +19,26 @@ export default function CountDown(){
 
 
     function StartCountDown(){
-        setActive(true);
+        setIsActive(true);
+    }
+
+    function resetCountDown(){
+        clearTimeout(countdownTimeout);
+        setIsActive(false);
+        setTime(0.1*60)
     }
 
     useEffect( ()=>{
-        if(active && time > 0){
-            setTimeout(()=>{
+        if(isActive && time > 0){
+            countdownTimeout = setTimeout(()=>{
                 setTime(time -1);
             }, 1000)
+        }else if(isActive && time === 0){
+            setHasFinished(true);
+            setIsActive(false);
+            startNewChallenge();
         }
-    }, [active, time])
+    }, [isActive, time])
 
     return(
     <>
@@ -39,9 +56,18 @@ export default function CountDown(){
             </div>
         </div>
 
-        <button type="button" className={styles.CountDownButton} onClick={StartCountDown}>
-            Iníciar um ciclo
-        </button>
+        {hasFinished ? (
+            <button disabled className={styles.CountDownButton}>
+                Ciclo encerrado
+            </button>
+        ): 
+        
+        <button type="button" className={
+            isActive ?  `${styles.CountDownButtonActive} ${styles.CountDownButton}` : `${styles.CountDownButton}`
+        } 
+        onClick={isActive ? resetCountDown : StartCountDown}>
+            { isActive ? 'Abandonar ciclo' : 'Iníciar um ciclo'}
+        </button>}
     </>
     );
 }
